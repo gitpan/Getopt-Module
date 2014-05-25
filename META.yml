@@ -26,6 +26,6 @@ requires:
 resources:
   bugtracker: http://github.com/chocolateboy/Getopt-Module/issues
   repository: http://github.com/chocolateboy/Getopt-Module
-version: v0.0.1
+version: v0.0.2
 x_test_requires:
   Test::More: 0

@@ -9,7 +9,7 @@ use Carp qw(confess);
 use Exporter qw(import);
 use Scalar::Util;
 
-$VERSION   = '0.0.1';
+$VERSION   = '0.0.2';
 @EXPORT_OK = qw(GetModule);
 
 my $MODULE_RE = qr{
@@ -158,7 +158,7 @@ Getopt::Module - handle -M and -m options like perl
 This module provides a convenient way for command-line Perl scripts to handle C<-M>
 and C<-m> options in the same way as perl.
 
-=head1 EXPORT
+=head1 EXPORTS
 
 None by default.
 
@@ -174,9 +174,30 @@ import type and parameters) are assigned to the target in the following ways.
 
 =head3 TARGETS
 
+=head4 ScalarRef
+
+C<eval>able C<use>/C<no> statements are appended to the referenced scalar, separated by the L<"separator"> option.
+If no separator is supplied, it defaults to a single space (" ") e.g.:
+
+Command:
+
+    command -MFoo=bar -M-Baz=quux
+
+Usage:
+
+    my $statements;
+
+    GetOptions(
+        'M|module=s' => GetModule(\$statements),
+    );
+
+Result (C<$statements>):
+
+    "use Foo qw(bar); no Baz qw(quux);"
+
 =head4 ArrayRef
 
-An C<eval>able C<use> or C<no> statement is pushed onto the arrayref e.g.:
+The C<use>/C<no> statement is pushed onto the arrayref e.g.:
 
 Command:
 
@@ -193,50 +214,6 @@ Usage:
 Result (C<$modules>):
 
     [ "use Foo qw(bar baz);", "no Quux;" ]
-
-=head4 CodeRef
-
-The coderef is passed 3 parameters:
-
-=over
-
-=item * name
-
-The name of the L<Getopt::Long> option e.g. C<M>.
-
-=item * eval
-
-The option's value as a C<use> or C<no> statement e.g: "use Foo qw(bar baz);".
-
-=item * spec
-
-A hashref that makes the various components of the option available separately e.g.:
-
-Command:
-
-    command -MFoo=bar,baz
-
-Usage:
-
-    sub process_module { ... }
-
-    GetOptions(
-        'M|module=s' => GetModule(\&process_module);
-    );
-
-The following hashref would be passed as the third argument to the C<process_module> sub:
-
-    {
-        args      => 'bar,baz',              # the comma-separated list of import/unimport args; undef if none are supplied
-        eval      => 'use Foo qw(bar baz);', # the evalable statement representing the option's value
-        method    => 'import',               # the method call represented by the statement: either "import" or "unimport"
-        module    => 'Foo'                   # the module name
-        name      => 'M',                    # the Getopt::Long option name
-        statement => 'use',                  # the statement type: either "use" or "no"
-        value     => 'Foo=bar,baz',          # The Getopt::Long option value
-    }
-
-=back
 
 =head4 HashRef
 
@@ -261,26 +238,49 @@ Result (C<$modules>):
         Quux => [ "use Quux;" ],
     }
 
-=head4 ScalarRef
+=head4 CodeRef
 
-C<use>/C<no> statements are appended to the referenced scalar separated by the L<"separator"> option. The referenced scalar
-can be undef. If no separator is supplied, it defaults to a single space (" ") e.g.:
+The coderef is passed 3 parameters:
+
+=over
+
+=item * name
+
+The name of the L<Getopt::Long> option e.g. C<M>.
+
+=item * eval
+
+The option's value as a C<use> or C<no> statement e.g: "use Foo qw(bar baz);".
+
+=item * spec
+
+A hashref that makes the various components of the option available e.g.:
 
 Command:
 
-    command -MFoo=bar -M-Baz=quux
+    command -MFoo=bar,baz
 
 Usage:
 
-    my $statements;
+    sub process_module { ... }
 
     GetOptions(
-        'M|module=s' => GetModule(\$statements),
+        'M|module=s' => GetModule(\&process_module);
     );
 
-Result (C<$statements>):
+The following hashref would be passed as the third argument to the C<process_module> sub:
 
-    "use Foo qw(bar); no Baz qw(quux);"
+    {
+        args      => 'bar,baz',              # the supplied import/unimport args; undef if none are supplied
+        eval      => 'use Foo qw(bar baz);', # the evalable statement representing the option's value
+        method    => 'import',               # the method call represented by the statement: either "import" or "unimport"
+        module    => 'Foo'                   # the module name
+        name      => 'M',                    # the Getopt::Long option name
+        statement => 'use',                  # the statement type: either "use" or "no"
+        value     => 'Foo=bar,baz',          # The Getopt::Long option value
+    }
+
+=back
 
 =head3 OPTIONS
 
@@ -299,7 +299,7 @@ C<import>/C<unimport> method call by passing an empty list e.g:
 
     use Foo ();
 
-Corresponds to perl's C<-m> option.
+This corresponds to perl's C<-m> option.
 
 =head4 separator
 
@@ -307,7 +307,7 @@ The separator used to separate statements assigned to the scalar-ref target. Def
 
 =head1 VERSION
 
-0.0.1
+0.0.2
 
 =head1 SEE ALSO
 
